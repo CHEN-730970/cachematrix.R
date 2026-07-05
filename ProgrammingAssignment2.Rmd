@@ -1,0 +1,81 @@
+---
+title: "Cachematrix.R"
+author: "Yulun Chen"
+date: "2026-07-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+## Put comments here that give an overall description of what your
+## functions do
+
+## Write a short comment describing this function
+## 这个函数创建一个特殊的"矩阵"对象，它可以缓存自己的逆矩阵。
+## 它实际上是一个包含4个函数的列表：
+## 1. set: 设置新矩阵，并清空旧缓存
+## 2. get: 获取当前矩阵
+## 3. setinverse: 将计算好的逆矩阵存入缓存
+## 4. getinverse: 从缓存中取出逆矩阵
+makeCacheMatrix <- function(x = matrix()) {
+    # inv 用于存储缓存的逆矩阵，初始为 NULL 代表缓存为空
+    inv <- NULL
+    
+    # 1. set 函数：更新矩阵
+    set <- function(y) {
+        x <<- y        # 使用 <<- 将新矩阵赋给外层的 x
+        inv <<- NULL   # 矩阵变了，之前的缓存失效，清空
+    }
+    
+    # 2. get 函数：返回当前存储的矩阵
+    get <- function() x
+    
+    # 3. setinverse 函数：把算好的逆矩阵存起来（供 cacheSolve 调用）
+    setinverse <- function(inverse) inv <<- inverse
+    
+    # 4. getinverse 函数：取出缓存的逆矩阵（供 cacheSolve 检查）
+    getinverse <- function() inv
+    
+    # 将这四个函数打包成列表返回
+    list(set = set, 
+         get = get,
+         setinverse = setinverse,
+         getinverse = getinverse)
+}
+
+
+## Write a short comment describing this function
+## 这个函数计算 makeCacheMatrix 创建的特殊矩阵的逆矩阵。
+## 如果逆矩阵已经在缓存中（且矩阵未变），则直接取出，否则计算并存入缓存。
+cacheSolve <- function(x, ...) {
+    ## Return a matrix that is the inverse of 'x'
+    
+    # 1. 尝试从缓存中取逆矩阵
+    inv <- x$getinverse()
+    
+    # 2. 判断：如果缓存不为空（说明之前算过）
+    if(!is.null(inv)) {
+        message("getting cached data")  # 提示正在使用缓存
+        return(inv)                     # 直接返回缓存结果，结束函数
+    }
+    
+    # 3. 走到这里说明缓存是空的（第一次调用，或者矩阵刚被更新过）
+    #    取出原始矩阵
+    data <- x$get()
+    
+    # 4. 用 solve() 函数计算逆矩阵
+    inv <- solve(data, ...)
+    
+    # 5. 将计算好的逆矩阵存入缓存（以便下次秒取）
+    x$setinverse(inv)
+    
+    # 6. 返回计算好的逆矩阵
+    inv
+}
+```
+
